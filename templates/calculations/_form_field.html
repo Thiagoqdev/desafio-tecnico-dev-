@@ -1,0 +1,48 @@
+<div class="flex flex-col gap-3 group">
+  <label for="{{ field.id_for_label }}" class="text-sm sm:text-lg text-[#879f98] font-thin transition-colors group-focus-within:text-white tracking-tight">
+    {{ field.label }}
+  </label>
+  {% with widget=field.field.widget %}
+  {% if widget.input_type == 'date' %}
+    <input
+      type="date"
+      name="{{ field.html_name }}"
+      id="{{ field.id_for_label }}"
+      value="{{ field.value|date:'Y-m-d'|default_if_none:'' }}"
+      autocomplete="{{ widget.attrs.autocomplete|default:'off' }}"
+      class="appearance-none bg-[#1d3a31] border border-transparent focus:border-white/30 focus:bg-[#204036] hover:bg-[#204036] focus:ring-2 focus:ring-white/10 rounded-2xl h-14 sm:h-16 px-4 sm:px-6 text-white placeholder-[#879f98]/50 outline-none w-full transition-all duration-300 font-thin text-base sm:text-lg"
+      {% if field.field.required %}required{% endif %}
+    >
+  {% elif widget.input_type == 'number' %}
+    <input
+      type="number"
+      name="{{ field.html_name }}"
+      id="{{ field.id_for_label }}"
+      value="{{ field.value|default_if_none:'' }}"
+      autocomplete="{{ widget.attrs.autocomplete|default:'off' }}"
+      placeholder="{{ widget.attrs.placeholder|default:'' }}"
+      step="{{ widget.attrs.step|default:'0.01' }}"
+      min="{{ widget.attrs.min|default_if_none:'' }}"
+      class="appearance-none bg-[#1d3a31] border border-transparent focus:border-white/30 focus:bg-[#204036] hover:bg-[#204036] focus:ring-2 focus:ring-white/10 rounded-2xl h-14 sm:h-16 px-4 sm:px-6 text-white placeholder-[#879f98]/50 outline-none w-full transition-all duration-300 font-thin text-base sm:text-lg"
+      {% if field.field.required %}required{% endif %}
+    >
+  {% else %}
+    <input
+      type="text"
+      name="{{ field.html_name }}"
+      id="{{ field.id_for_label }}"
+      value="{{ field.value|default_if_none:'' }}"
+      autocomplete="{{ widget.attrs.autocomplete|default:'off' }}"
+      placeholder="{{ widget.attrs.placeholder|default:'' }}"
+      class="appearance-none bg-[#1d3a31] border border-transparent focus:border-white/30 focus:bg-[#204036] hover:bg-[#204036] focus:ring-2 focus:ring-white/10 rounded-2xl h-14 sm:h-16 px-4 sm:px-6 text-white placeholder-[#879f98]/50 outline-none w-full transition-all duration-300 font-thin text-base sm:text-lg"
+      {% if field.field.required %}required{% endif %}
+    >
+  {% endif %}
+  {% endwith %}
+  {% if field.help_text %}
+    <p class="text-xs text-[#879f98]/80 font-thin tracking-tight">{{ field.help_text|safe }}</p>
+  {% endif %}
+  {% for error in field.errors %}
+    <p class="text-sm text-[#FFB74D] font-light tracking-tight">{{ error }}</p>
+  {% endfor %}
+</div>

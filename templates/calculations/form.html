@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo cálculo — Juriscalc{% endblock %}
+
+{% block content %}
+<section class="px-4 sm:px-8 lg:px-16 2xl:px-24 py-16 sm:py-28 w-full relative overflow-hidden">
+  <div class="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] bg-[#c8dbd2] rounded-full blur-[100px] -z-10 opacity-50"></div>
+
+  <div class="mb-12 sm:mb-16 reveal-blur">
+    <div class="text-sm uppercase tracking-widest text-[#879f98] mb-6 font-thin flex items-center gap-2 tracking-tight">
+      <span class="w-6 h-px bg-[#879f98]"></span>
+      Cálculo
+    </div>
+    <h1 class="font-light text-[40px] sm:text-6xl lg:text-[64px] text-[#132a24] leading-tight sm:leading-[1.1] tracking-tight">
+      Atualização <span class="text-[#274f44]">monetária</span>.
+    </h1>
+    <p class="text-base sm:text-xl text-[#4b615a] font-thin leading-relaxed tracking-tight mt-6 max-w-2xl">
+      Preencha os dados e clique em <strong>Calcular</strong>. O motor determinístico processa a correção com base na legislação vigente e gera a memória de cálculo auditável.
+    </p>
+  </div>
+
+  <div class="reveal-up max-w-5xl mx-auto mb-8">
+    {% include 'indices/_cache_card.html' %}
+  </div>
+
+  <form method="post" id="calculation-form" class="bg-[#173028] border border-white/5 rounded-[2rem] p-6 sm:p-12 shadow-[0_20px_50px_-12px_rgba(19,42,36,0.35)] reveal-up max-w-5xl mx-auto">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="mb-8 rounded-2xl border border-[#FFB74D]/40 bg-[#FFB74D]/10 px-4 py-3 text-sm text-[#FFB74D] font-light tracking-tight">
+        {{ form.non_field_errors|join:' ' }}
+      </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+      {% include 'calculations/_form_field.html' with field=form.base_value %}
+      {% include 'calculations/_form_field.html' with field=form.start_term %}
+      {% include 'calculations/_form_field.html' with field=form.end_term %}
+    </div>
+
+    <div class="mt-8 sm:mt-10 pt-8 sm:pt-10 border-t border-white/5">
+      <h3 class="font-light text-lg sm:text-xl text-white tracking-tight mb-6">Modo de correção</h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+        <div class="flex flex-col gap-4">
+          <label class="text-sm sm:text-lg text-[#879f98] font-thin tracking-tight">Modo de seleção do índice</label>
+          <div class="flex flex-col gap-3" id="index-mode-radios">
+            <label class="flex items-center gap-4 cursor-pointer group">
+              <input type="radio" name="{{ form.index_selection_mode.html_name }}" value="auto"
+                {% if form.index_selection_mode.value|default:'auto' == 'auto' %}checked{% endif %}
+                class="sr-only peer" data-mode="auto">
+              <span class="w-5 h-5 rounded-full border-2 border-[#879f98] flex items-center justify-center peer-checked:border-white peer-checked:bg-white transition-all duration-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#132a24] opacity-0 peer-checked:opacity-100 transition-opacity duration-300"></span>
+              </span>
+              <span class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight group-hover:text-white transition-colors">Automático (legislação)</span>
+            </label>
+            <label class="flex items-center gap-4 cursor-pointer group">
+              <input type="radio" name="{{ form.index_selection_mode.html_name }}" value="manual"
+                {% if form.index_selection_mode.value == 'manual' %}checked{% endif %}
+                class="sr-only peer" data-mode="manual">
+              <span class="w-5 h-5 rounded-full border-2 border-[#879f98] flex items-center justify-center peer-checked:border-white peer-checked:bg-white transition-all duration-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#132a24] opacity-0 peer-checked:opacity-100 transition-opacity duration-300"></span>
+              </span>
+              <span class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight group-hover:text-white transition-colors">Manual (índice único)</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="manual-index-wrapper" class="flex flex-col gap-3 group {% if form.index_selection_mode.value|default:'auto' != 'manual' %}hidden{% endif %}">
+          <label for="{{ form.manual_index.id_for_label }}" class="text-sm sm:text-lg text-[#879f98] font-thin tracking-tight">
+            {{ form.manual_index.label }}
+          </label>
+          <select name="{{ form.manual_index.html_name }}" id="{{ form.manual_index.id_for_label }}"
+            class="appearance-none bg-[#1d3a31] border border-transparent focus:border-white/30 focus:bg-[#204036] hover:bg-[#204036] focus:ring-2 focus:ring-white/10 rounded-2xl h-14 sm:h-16 px-4 sm:px-6 text-white outline-none w-full transition-all duration-300 font-thin text-base sm:text-lg">
+            <option value="">Selecione um índice...</option>
+            {% for idx in form.manual_index.field.queryset %}
+              <option value="{{ idx.pk }}" {% if form.manual_index.value|stringformat:'s' == idx.pk|stringformat:'s' %}selected{% endif %}>
+                {{ idx.code }} — {{ idx.name }}
+              </option>
+            {% endfor %}
+          </select>
+          {% if form.manual_index.errors %}
+            <p class="text-xs text-[#dfb28e] font-thin tracking-tight">{{ form.manual_index.errors|join:', ' }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 sm:mt-10 pt-8 sm:pt-10 border-t border-white/5">
+      <h3 class="font-light text-lg sm:text-xl text-white tracking-tight mb-6">Juros e honorários</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+        <div class="flex flex-col gap-3 group">
+          <label class="flex items-center gap-4 cursor-pointer group">
+            <input type="checkbox" name="{{ form.interest_enabled.html_name }}"
+              {% if form.interest_enabled.value %}checked{% endif %}
+              class="sr-only peer">
+            <span class="w-5 h-5 rounded-md border-2 border-[#879f98] flex items-center justify-center peer-checked:border-white peer-checked:bg-white transition-all duration-300">
+              <iconify-icon icon="solar:check-read-bold" class="text-sm text-[#132a24] opacity-0 peer-checked:opacity-100 transition-opacity duration-300"></iconify-icon>
+            </span>
+            <span class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight group-hover:text-white transition-colors">{{ form.interest_enabled.label }}</span>
+          </label>
+        </div>
+        {% include 'calculations/_form_field.html' with field=form.attorney_fee_percent %}
+      </div>
+    </div>
+
+    <div class="mt-8 sm:mt-10 pt-8 sm:pt-10 border-t border-white/5">
+      <h3 class="font-light text-lg sm:text-xl text-white tracking-tight mb-6">Parcelamento</h3>
+
+      <div class="flex flex-col gap-3 mb-6" id="installment-mode-radios">
+        <label class="flex items-center gap-4 cursor-pointer group">
+          <input type="radio" name="{{ form.installment_mode.html_name }}" value="single"
+            {% if form.installment_mode.value|default:'single' == 'single' %}checked{% endif %}
+            class="sr-only peer" data-mode="single">
+          <span class="w-5 h-5 rounded-full border-2 border-[#879f98] flex items-center justify-center peer-checked:border-white peer-checked:bg-white transition-all duration-300">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#132a24] opacity-0 peer-checked:opacity-100 transition-opacity duration-300"></span>
+          </span>
+          <span class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight group-hover:text-white transition-colors">Parcela única</span>
+        </label>
+        <label class="flex items-center gap-4 cursor-pointer group">
+          <input type="radio" name="{{ form.installment_mode.html_name }}" value="multiple"
+            {% if form.installment_mode.value == 'multiple' %}checked{% endif %}
+            class="sr-only peer" data-mode="multiple">
+          <span class="w-5 h-5 rounded-full border-2 border-[#879f98] flex items-center justify-center peer-checked:border-white peer-checked:bg-white transition-all duration-300">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#132a24] opacity-0 peer-checked:opacity-100 transition-opacity duration-300"></span>
+          </span>
+          <span class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight group-hover:text-white transition-colors">Múltiplas parcelas</span>
+        </label>
+      </div>
+
+      {{ installment_formset.management_form }}
+      <div id="installments-container" class="{% if form.installment_mode.value|default:'single' != 'multiple' %}hidden{% endif %} bg-[#132a24]/30 rounded-2xl border border-white/5 p-6 space-y-4">
+        <div class="text-xs uppercase tracking-widest text-[#879f98] font-thin mb-4">Parcelas adicionais</div>
+        {% for inst_form in installment_formset %}
+          <div class="installment-row grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-start p-4 rounded-xl bg-[#1d3a31]/60 border border-white/5">
+            <span class="text-[#879f98] font-mono font-light text-lg pt-2">{{ forloop.counter }}</span>
+            <div class="space-y-3">
+              <label class="flex items-center gap-4 cursor-pointer group">
+                <input type="checkbox" name="{{ inst_form.same_as_first.html_name }}"
+                  {% if inst_form.same_as_first.value|default_if_none:True %}checked{% endif %}
+                  class="sr-only peer same-as-first">
+                <span class="w-4 h-4 rounded-md border border-[#879f98] flex items-center justify-center peer-checked:border-white peer-checked:bg-white transition-all duration-300">
+                  <iconify-icon icon="solar:check-read-bold" class="text-[10px] text-[#132a24] opacity-0 peer-checked:opacity-100 transition-opacity duration-300"></iconify-icon>
+                </span>
+                <span class="text-sm text-[#879f98] font-thin tracking-tight group-hover:text-white transition-colors">Igual à primeira parcela</span>
+              </label>
+              <div class="installment-value-wrapper">
+                <label for="{{ inst_form.value.id_for_label }}" class="text-xs text-[#879f98] font-thin tracking-tight">Valor (R$)</label>
+                <input
+                  type="number"
+                  name="{{ inst_form.value.html_name }}"
+                  id="{{ inst_form.value.id_for_label }}"
+                  value="{{ inst_form.value.value|default_if_none:'' }}"
+                  placeholder="5.000,00"
+                  step="0.01"
+                  min="0.01"
+                  class="appearance-none bg-[#1d3a31] border border-transparent focus:border-white/30 focus:bg-[#204036] hover:bg-[#204036] focus:ring-2 focus:ring-white/10 rounded-2xl h-12 px-4 text-white placeholder-[#879f98]/50 outline-none w-full transition-all duration-300 font-thin text-sm sm:text-base">
+                {% if inst_form.value.errors %}
+                  <p class="text-xs text-[#dfb28e] font-thin tracking-tight mt-1">{{ inst_form.value.errors|join:', ' }}</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="mt-8 sm:mt-10 pt-8 sm:pt-10 border-t border-white/5">
+      <h3 class="font-light text-lg sm:text-xl text-white tracking-tight mb-6">RPV/Precatório</h3>
+      <div class="space-y-4">
+        <label class="flex items-center gap-4 cursor-pointer group">
+          <input type="checkbox" name="{{ form.rpv_issued.html_name }}" id="id_rpv_issued"
+            {% if form.rpv_issued.value %}checked{% endif %}
+            class="sr-only peer">
+          <span class="w-5 h-5 rounded-md border-2 border-[#879f98] flex items-center justify-center peer-checked:border-white peer-checked:bg-white transition-all duration-300">
+            <iconify-icon icon="solar:check-read-bold" class="text-sm text-[#132a24] opacity-0 peer-checked:opacity-100 transition-opacity duration-300"></iconify-icon>
+          </span>
+          <span class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight group-hover:text-white transition-colors">
+            {{ form.rpv_issued.label }}
+          </span>
+        </label>
+        <p class="text-xs text-[#879f98]/80 font-thin tracking-tight ml-9">
+          {{ form.rpv_issued.help_text }}
+        </p>
+
+        <div id="rpv-date-wrapper" class="ml-9 {% if not form.rpv_issued.value %}hidden{% endif %} max-w-xs">
+          {% include 'calculations/_form_field.html' with field=form.rpv_issue_date %}
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-10">
+      <a href="{% url 'accounts:dashboard' %}" class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight hover:text-white transition-colors">
+        Cancelar
+      </a>
+      <button type="submit" id="calculate-btn" class="group bg-white text-[#132a24] px-8 sm:px-10 py-4 sm:py-5 rounded-full text-base sm:text-lg hover:bg-[#eef5f1] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 inline-flex items-center justify-center gap-2 font-light tracking-tight">
+        Calcular
+        <iconify-icon icon="solar:arrow-right-linear" class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1.5"></iconify-icon>
+      </button>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function() {
+    const form = document.getElementById('calculation-form');
+
+    const indexModeRadios = document.querySelectorAll('#index-mode-radios input[type="radio"]');
+    const manualIndexWrapper = document.getElementById('manual-index-wrapper');
+
+    const installmentModeRadios = document.querySelectorAll('#installment-mode-radios input[type="radio"]');
+    const installmentsContainer = document.getElementById('installments-container');
+
+    const rpvCheckbox = document.getElementById('id_rpv_issued');
+    const rpvDateWrapper = document.getElementById('rpv-date-wrapper');
+
+    function toggleManualIndex() {
+      const selected = document.querySelector('#index-mode-radios input[type="radio"]:checked');
+      if (selected && selected.dataset.mode === 'manual') {
+        manualIndexWrapper.classList.remove('hidden');
+      } else {
+        manualIndexWrapper.classList.add('hidden');
+      }
+    }
+
+    function toggleInstallments() {
+      const selected = document.querySelector('#installment-mode-radios input[type="radio"]:checked');
+      if (selected && selected.dataset.mode === 'multiple') {
+        installmentsContainer.classList.remove('hidden');
+      } else {
+        installmentsContainer.classList.add('hidden');
+      }
+    }
+
+    function toggleRPVDate() {
+      if (rpvCheckbox && rpvDateWrapper) {
+        if (rpvCheckbox.checked) {
+          rpvDateWrapper.classList.remove('hidden');
+        } else {
+          rpvDateWrapper.classList.add('hidden');
+        }
+      }
+    }
+
+    indexModeRadios.forEach(function(radio) {
+      radio.addEventListener('change', toggleManualIndex);
+    });
+
+    installmentModeRadios.forEach(function(radio) {
+      radio.addEventListener('change', toggleInstallments);
+    });
+
+    if (rpvCheckbox) {
+      rpvCheckbox.addEventListener('change', toggleRPVDate);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      toggleManualIndex();
+      toggleInstallments();
+      toggleRPVDate();
+    });
+
+    document.querySelectorAll('.same-as-first').forEach(function(cb) {
+      var row = cb.closest('.installment-row');
+      var valueInput = row.querySelector('.installment-value-wrapper');
+      function update() {
+        if (cb.checked) {
+          valueInput.style.opacity = '0.4';
+          valueInput.querySelector('input').disabled = true;
+        } else {
+          valueInput.style.opacity = '1';
+          valueInput.querySelector('input').disabled = false;
+        }
+      }
+      cb.addEventListener('change', update);
+      update();
+    });
+  })();
+</script>
+{% endblock %}

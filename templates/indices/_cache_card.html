@@ -1,0 +1,203 @@
+<div class="bg-white rounded-[2rem] border border-black/5 p-8 sm:p-10 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.06)]">
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div>
+      <div class="text-xs uppercase tracking-widest text-[#879f98] mb-3 font-thin">
+        Base de índices
+      </div>
+      <h3 class="font-light text-xl sm:text-2xl text-[#132a24] tracking-tight mb-2">
+        Índices econômicos
+      </h3>
+      <p class="text-sm text-[#4b615a] font-thin leading-relaxed tracking-tight max-w-xl">
+        Importe os valores mensais de INPC, IPCA-E, IPCA, SELIC e IGP-M (desde 1990). Apenas valores ausentes serão buscados.
+      </p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div id="cache-status" class="text-xs text-[#879f98] font-mono font-light"></div>
+      <button id="import-indices-btn" onclick="importIndices()"
+        class="group bg-[#132a24] text-white px-6 py-3 rounded-full text-sm sm:text-base flex justify-center items-center gap-2 hover:bg-[#1b3b33] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 font-light tracking-tight disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+        <iconify-icon icon="solar:download-linear" class="w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5"></iconify-icon>
+        <span id="import-btn-text">Importar índices</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div id="import-progress" class="hidden mt-6">
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-3">
+        <div class="w-4 h-4 border-2 border-[#132a24]/30 border-t-[#132a24] rounded-full animate-spin" id="progress-spinner"></div>
+        <p class="text-sm text-[#4b615a] font-thin tracking-tight" id="progress-text">Importando índices...</p>
+      </div>
+      <span class="text-sm font-light text-[#132a24]" id="progress-percent">0%</span>
+    </div>
+    <div class="w-full bg-[#eef5f1] rounded-full h-3 overflow-hidden">
+      <div id="progress-bar" class="bg-[#2aa168] h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+    </div>
+    <p class="text-xs text-[#879f98] font-thin tracking-tight mt-2" id="progress-detail"></p>
+  </div>
+
+  <!-- Success result -->
+  <div id="import-done" class="hidden mt-6 rounded-2xl border border-[#2aa168]/30 bg-[#2aa168]/10 p-4">
+    <p class="text-sm text-[#2aa168] font-light tracking-tight" id="done-text"></p>
+  </div>
+
+  <!-- Error result -->
+  <div id="import-error" class="hidden mt-6 rounded-2xl border border-[#FFB74D]/40 bg-[#FFB74D]/10 p-4">
+    <p class="text-sm text-[#FFB74D] font-light tracking-tight" id="error-text"></p>
+  </div>
+</div>
+
+<script>
+  function getCSRFToken() {
+    var name = 'csrftoken';
+    var cookies = document.cookie.split(';');
+    for (var i = 0; i < cookies.length; i++) {
+      var c = cookies[i].trim();
+      if (c.startsWith(name + '=')) {
+        return c.substring(name.length + 1);
+      }
+    }
+    return '';
+  }
+
+  var importPollInterval = null;
+
+  function updateProgressBar(data) {
+    var bar = document.getElementById('progress-bar');
+    var percentEl = document.getElementById('progress-percent');
+    var detailEl = document.getElementById('progress-detail');
+    var textEl = document.getElementById('progress-text');
+
+    var pct = data.percent || 0;
+    bar.style.width = pct + '%';
+    percentEl.textContent = pct + '%';
+
+    var created = data.created || 0;
+    var skipped = data.skipped || 0;
+    var errors = data.errors || 0;
+    var processed = data.processed || 0;
+    var total = data.total || 0;
+
+    textEl.textContent = 'Importando índices...';
+    detailEl.textContent = created + ' importados · ' + skipped + ' já existentes · ' + errors + ' erros — ' + processed + ' de ' + total;
+  }
+
+  function showResult(data) {
+    var progress = document.getElementById('import-progress');
+    var done = document.getElementById('import-done');
+    var doneText = document.getElementById('done-text');
+    var btn = document.getElementById('import-indices-btn');
+    var btnText = document.getElementById('import-btn-text');
+    var error = document.getElementById('import-error');
+    var errorText = document.getElementById('error-text');
+
+    progress.classList.add('hidden');
+    btn.disabled = false;
+    btnText.textContent = 'Importar índices';
+
+    if (data.error) {
+      error.classList.remove('hidden');
+      errorText.textContent = data.error || 'Erro ao importar índices.';
+      return;
+    }
+
+    var result = data.result || data;
+    done.classList.remove('hidden');
+    doneText.textContent = 'Importação concluída! ' + (result.created || 0) + ' novos valores, ' + (result.skipped || 0) + ' já existentes, ' + (result.errors || 0) + ' erros.';
+    loadCacheStatus();
+  }
+
+  function pollProgress() {
+    fetch('{% url "indices:import" %}', {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.running) {
+        updateProgressBar(data);
+      } else {
+        if (importPollInterval) {
+          clearInterval(importPollInterval);
+          importPollInterval = null;
+        }
+        showResult(data);
+      }
+    })
+    .catch(function() {});
+  }
+
+  function importIndices() {
+    var btn = document.getElementById('import-indices-btn');
+    var btnText = document.getElementById('import-btn-text');
+    var progress = document.getElementById('import-progress');
+    var done = document.getElementById('import-done');
+    var error = document.getElementById('import-error');
+
+    btn.disabled = true;
+    btnText.textContent = 'Iniciando...';
+    progress.classList.remove('hidden');
+    done.classList.add('hidden');
+    error.classList.add('hidden');
+
+    document.getElementById('progress-text').textContent = 'Conectando às APIs públicas...';
+    document.getElementById('progress-detail').textContent = 'IBGE (INPC, IPCA-E, IPCA) e BCB (SELIC, IGP-M)';
+    document.getElementById('progress-bar').style.width = '0%';
+    document.getElementById('progress-percent').textContent = '0%';
+
+    fetch('{% url "indices:import" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': getCSRFToken()
+      },
+      body: JSON.stringify({ start: '1990-01', end: new Date().toISOString().slice(0, 7) })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.ok && !data.running) {
+        progress.classList.add('hidden');
+        btn.disabled = false;
+        btnText.textContent = 'Importar índices';
+        error.classList.remove('hidden');
+        document.getElementById('error-text').textContent = data.error || 'Erro ao iniciar importação.';
+        return;
+      }
+
+      btnText.textContent = 'Importando...';
+      if (data.total) {
+        document.getElementById('progress-detail').textContent = '0 de ' + data.total;
+      }
+
+      if (importPollInterval) clearInterval(importPollInterval);
+      importPollInterval = setInterval(pollProgress, 800);
+      setTimeout(pollProgress, 300);
+    })
+    .catch(function(err) {
+      progress.classList.add('hidden');
+      btn.disabled = false;
+      btnText.textContent = 'Importar índices';
+      error.classList.remove('hidden');
+      document.getElementById('error-text').textContent = 'Erro de conexão. Verifique sua internet.';
+    });
+  }
+
+  function loadCacheStatus() {
+    fetch('{% url "indices:import" %}', {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok && data.status) {
+        var parts = [];
+        for (var code in data.status) {
+          parts.push(code + ': ' + data.status[code] + ' meses');
+        }
+        document.getElementById('cache-status').textContent = parts.join(' · ');
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadCacheStatus);
+</script>

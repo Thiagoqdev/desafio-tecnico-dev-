@@ -1,0 +1,28 @@
+[project]
+name = 'juriscalc'
+version = '0.1.0'
+description = 'Plataforma de cálculos jurídicos.'
+requires-python = '>=3.12'
+
+[tool.ruff]
+line-length = 100
+target-version = 'py312'
+extend-exclude = ['migrations', '.venv', 'static', 'design_system']
+
+[tool.ruff.lint]
+# E/W: pycodestyle (PEP 8), F: pyflakes, I: isort, Q: quote style,
+# UP: pyupgrade, DJ: Django, B: bugbear, SIM: simplify.
+select = ['E', 'W', 'F', 'I', 'Q', 'UP', 'DJ', 'B', 'SIM']
+ignore = [
+    'E501',  # line length handled by the formatter
+]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = 'single'
+multiline-quotes = 'single'
+docstring-quotes = 'single'
+
+[tool.ruff.format]
+quote-style = 'single'
+indent-style = 'space'
+docstring-code-format = true

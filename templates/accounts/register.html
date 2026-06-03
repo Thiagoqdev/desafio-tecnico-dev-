@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar conta — Juriscalc{% endblock %}
+
+{% block content %}
+<section class="px-4 sm:px-8 lg:px-16 2xl:px-24 py-16 sm:py-28 w-full relative overflow-hidden">
+  <div class="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] bg-[#c8dbd2] rounded-full blur-[100px] -z-10 animate-[gradientFlow1_8s_ease-in-out_infinite]"></div>
+  <div class="absolute top-[30%] -right-[10%] w-[500px] h-[500px] bg-[#b9cfc5] rounded-full blur-[100px] -z-10 animate-[gradientFlow2_10s_ease-in-out_infinite]"></div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 max-w-6xl mx-auto items-center">
+    <div class="lg:col-span-5">
+      <div class="text-sm uppercase tracking-widest text-[#879f98] mb-6 font-thin flex items-center gap-2 tracking-tight">
+        <span class="w-6 h-px bg-[#879f98]"></span>
+        Cadastro
+      </div>
+      <h1 class="font-light text-[40px] sm:text-6xl lg:text-[64px] text-[#132a24] leading-tight sm:leading-[1.1] tracking-tight mb-6 opacity-0 animate-[blurFadeUp_1.2s_cubic-bezier(0.22,1,0.36,1)_forwards]" style="animation-delay: 100ms;">
+        Crie sua <span class="text-[#274f44]">conta</span>.
+      </h1>
+      <p class="text-base sm:text-xl text-[#4b615a] font-thin leading-relaxed tracking-tight max-w-xl">
+        Em poucos segundos você ganha acesso ao painel de cálculos, à importação de sentenças e à memória de cálculo auditável.
+      </p>
+    </div>
+
+    <div class="lg:col-span-7 reveal-up">
+      <form method="post" class="bg-[#173028] border border-white/5 rounded-[2rem] p-6 sm:p-12 shadow-[0_20px_50px_-12px_rgba(19,42,36,0.35)]">
+        {% csrf_token %}
+
+        <div class="mb-8">
+          <h2 class="font-light text-2xl sm:text-3xl text-white tracking-tight">Novo acesso</h2>
+          <p class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight mt-2">Preencha seus dados para iniciar.</p>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="mb-6 rounded-2xl border border-[#FFB74D]/40 bg-[#FFB74D]/10 px-4 py-3 text-sm text-[#FFB74D] font-light tracking-tight">
+            {{ form.non_field_errors|join:' ' }}
+          </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8">
+          {% include 'accounts/_form_field.html' with field=form.username %}
+          {% include 'accounts/_form_field.html' with field=form.email %}
+          {% include 'accounts/_form_field.html' with field=form.password1 %}
+          {% include 'accounts/_form_field.html' with field=form.password2 %}
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-10">
+          <a href="{% url 'accounts:login' %}" class="text-sm sm:text-base text-[#879f98] font-thin tracking-tight hover:text-white transition-colors">
+            Já tem uma conta? Entrar
+          </a>
+          <button type="submit" class="group bg-white text-[#132a24] px-8 sm:px-10 py-4 sm:py-5 rounded-full text-base sm:text-lg hover:bg-[#eef5f1] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 inline-flex items-center justify-center gap-2 font-light tracking-tight">
+            Criar conta
+            <iconify-icon icon="solar:arrow-right-linear" class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1.5"></iconify-icon>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

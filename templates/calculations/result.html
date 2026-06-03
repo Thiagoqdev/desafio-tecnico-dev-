@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load l10n %}
+
+{% block title %}Resultado — Juriscalc{% endblock %}
+
+{% block extra_styles %}
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; }
+    .bg-\[\\#f5f7f6\] { background: white !important; }
+    .bg-white { border: 1px solid #ccc !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="px-4 sm:px-8 lg:px-16 2xl:px-24 py-16 sm:py-28 w-full relative overflow-hidden">
+  <div class="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] bg-[#c8dbd2] rounded-full blur-[100px] -z-10 opacity-50"></div>
+
+  <div class="mb-6 reveal-blur">
+    <div class="text-sm uppercase tracking-widest text-[#879f98] mb-6 font-thin flex items-center gap-2 tracking-tight">
+      <span class="w-6 h-px bg-[#879f98]"></span>
+      Resultado
+    </div>
+    <h1 class="font-light text-[40px] sm:text-[56px] lg:text-[64px] text-[#132a24] leading-tight sm:leading-[1.1] tracking-tight">
+      Memória de <span class="text-[#274f44]">cálculo</span>.
+    </h1>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 reveal-up delay-100">
+    <div class="lg:w-1/3">
+      <div class="bg-white rounded-[2rem] border border-black/5 p-8 sm:p-10 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.06)] sticky top-28">
+        <div class="text-xs uppercase tracking-widest text-[#879f98] mb-4 font-thin">Resumo</div>
+
+        <div class="space-y-4">
+          <div class="flex justify-between items-baseline">
+            <span class="text-sm text-[#546b64] font-thin tracking-tight">Valor base</span>
+            <span class="text-lg text-[#132a24] font-light tracking-tight">R$ {{ calculation.base_value|floatformat:2 }}</span>
+          </div>
+          <div class="flex justify-between items-baseline">
+            <span class="text-sm text-[#546b64] font-thin tracking-tight">Período</span>
+            <span class="text-sm text-[#132a24] font-light tracking-tight">{{ calculation.start_term|date:'d/m/Y' }} → {{ calculation.end_term|date:'d/m/Y' }}</span>
+          </div>
+          {% if calculation.installment_mode == 'multiple' %}
+          <div class="flex justify-between items-baseline">
+            <span class="text-sm text-[#546b64] font-thin tracking-tight">Parcelas</span>
+            <span class="text-sm text-[#132a24] font-light tracking-tight">{{ calculation.installments.count }} parcela{{ calculation.installments.count|pluralize:'s' }}</span>
+          </div>
+          {% endif %}
+          {% if calculation.rpv_issued and calculation.rpv_issue_date %}
+          <div class="flex justify-between items-baseline">
+            <span class="text-sm text-[#546b64] font-thin tracking-tight">RPV emitido</span>
+            <span class="text-sm text-[#132a24] font-light tracking-tight">{{ calculation.rpv_issue_date|date:'d/m/Y' }}</span>
+          </div>
+          {% endif %}
+
+          <div class="pt-6 mt-6 border-t border-black/5">
+            <div class="flex justify-between items-baseline">
+              <span class="text-sm uppercase tracking-widest text-[#879f98] font-thin">Total atualizado</span>
+            </div>
+            <div class="mt-2">
+              <span class="text-3xl sm:text-4xl text-[#132a24] font-light tracking-tight">
+                R$ {{ calculation.result_total|floatformat:2 }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 flex flex-col gap-3 no-print">
+          <a href="{% url 'calculations:create' %}" class="group bg-[#132a24] text-white px-6 py-4 rounded-full text-sm sm:text-base flex justify-center items-center gap-2 hover:bg-[#1b3b33] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 font-light tracking-tight">
+            Novo cálculo
+            <iconify-icon icon="solar:arrow-right-linear" class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"></iconify-icon>
+          </a>
+          <a href="{% url 'calculations:export' calculation.pk %}" class="bg-transparent border border-[#132a24]/20 text-[#132a24] px-6 py-4 rounded-full text-sm sm:text-base flex justify-center items-center gap-2 hover:bg-black/5 hover:border-[#132a24]/40 transition-all duration-300 font-light tracking-tight">
+            <iconify-icon icon="solar:download-linear" class="w-4 h-4"></iconify-icon>
+            Exportar CSV
+          </a>
+          <a href="{% url 'accounts:dashboard' %}" class="bg-transparent border border-[#132a24]/20 text-[#132a24] px-6 py-4 rounded-full text-sm sm:text-base flex justify-center items-center hover:bg-black/5 hover:border-[#132a24]/40 transition-all duration-300 font-light tracking-tight">
+            Voltar ao painel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:w-2/3">
+      <div class="bg-white rounded-[2rem] border border-black/5 p-6 sm:p-10 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.06)]">
+        <div class="text-xs uppercase tracking-widest text-[#879f98] mb-6 font-thin flex items-center gap-2">
+          <span class="w-4 h-px bg-[#879f98]"></span>
+          Etapas do cálculo
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-separate border-spacing-0">
+            <thead>
+              <tr class="text-xs uppercase tracking-widest text-[#879f98] font-thin">
+                <th class="pb-4 pr-4 font-thin text-left whitespace-nowrap">Período</th>
+                <th class="pb-4 pr-4 font-thin text-left whitespace-nowrap">Índice</th>
+                <th class="pb-4 pr-4 font-thin text-right whitespace-nowrap">Fator</th>
+                <th class="pb-4 pr-4 font-thin text-right whitespace-nowrap">Juros</th>
+                <th class="pb-4 font-thin text-right whitespace-nowrap">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody class="before:block before:leading-5 before:content-['']">
+              {% for step in calculation.steps.all %}
+                <tr class="border-t border-black/5 group hover:bg-[#fafbfa] transition-colors">
+                  <td class="py-4 pr-4 text-sm text-[#132a24] font-light tracking-tight whitespace-nowrap">
+                    {{ step.period_start|date:'d/m/Y' }}
+                    {% if step.period_start != step.period_end %}
+                      → {{ step.period_end|date:'d/m/Y' }}
+                    {% endif %}
+                  </td>
+                  <td class="py-4 pr-4 text-sm text-[#4b615a] font-thin tracking-tight whitespace-nowrap">
+                    {{ step.applied_index|default:'—' }}
+                  </td>
+                  <td class="py-4 pr-4 text-sm text-[#132a24] font-mono font-light text-right whitespace-nowrap tabular-nums">
+                    {{ step.factor|floatformat:8 }}
+                  </td>
+                  <td class="py-4 pr-4 text-sm text-right whitespace-nowrap tabular-nums {% if step.interest_amount > 0 %}text-[#2aa168]{% else %}text-[#879f98]{% endif %}">
+                    R$ {{ step.interest_amount|floatformat:2 }}
+                  </td>
+                  <td class="py-4 text-sm text-[#132a24] font-light tracking-tight text-right whitespace-nowrap tabular-nums">
+                    R$ {{ step.subtotal|floatformat:2 }}
+                  </td>
+                </tr>
+                <tr class="border-b border-black/5 group hover:bg-[#fafbfa] transition-colors">
+                  <td colspan="5" class="pb-4 pr-4 text-xs text-[#879f98] font-thin leading-relaxed tracking-tight">
+                    {{ step.description }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="border-t-2 border-[#132a24]/20">
+                <td colspan="4" class="pt-4 pr-4 text-sm uppercase tracking-widest text-[#132a24] font-light text-right">
+                  Total
+                </td>
+                <td class="pt-4 text-lg text-[#132a24] font-light tracking-tight text-right tabular-nums">
+                  R$ {{ calculation.result_total|floatformat:2 }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-black/5 text-xs text-[#879f98] font-thin tracking-tight">
+          <div class="flex items-center gap-2 mb-2">
+            <iconify-icon icon="solar:info-circle-linear" class="text-sm"></iconify-icon>
+            <span>Cálculo determinístico — mesma entrada produz sempre a mesma saída.</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <iconify-icon icon="solar:clock-circle-linear" class="text-sm"></iconify-icon>
+            <span>Realizado em {{ calculation.created_at|date:'d/m/Y \à\s H:i' }}.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

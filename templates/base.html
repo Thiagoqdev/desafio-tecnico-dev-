@@ -1,0 +1,165 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Juriscalc{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
+  <style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(30px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blurFadeUp {
+      0% { opacity: 0; filter: blur(16px); transform: translateY(30px); }
+      100% { opacity: 1; filter: blur(0px); transform: translateY(0); }
+    }
+    @keyframes gradientFlow1 {
+      0%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0.2; }
+      50% { transform: translate(-80px, 60px) scale(1.8); opacity: 0.95; }
+    }
+    @keyframes gradientFlow2 {
+      0%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0.3; }
+      50% { transform: translate(80px, -80px) scale(1.7); opacity: 0.95; }
+    }
+    .reveal-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 1s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity, transform;
+    }
+    .reveal-up.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-blur {
+      opacity: 0;
+      filter: blur(16px);
+      transform: translateY(30px);
+      transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity, filter, transform;
+    }
+    .reveal-blur.in-view {
+      opacity: 1;
+      filter: blur(0px);
+      transform: translateY(0);
+    }
+    .delay-100 { transition-delay: 100ms; }
+    .delay-200 { transition-delay: 200ms; }
+    .delay-300 { transition-delay: 300ms; }
+  </style>
+  {% block extra_styles %}{% endblock %}
+</head>
+<body class="bg-[#f5f7f6] text-[#132a24] antialiased min-h-screen flex flex-col selection:bg-[#132a24] selection:text-white font-['Satoshi',sans-serif]">
+
+  <header id="main-header" class="sticky top-0 z-50 bg-[#f5f7f6]/90 backdrop-blur-md border-b border-black/5 transition-all duration-500">
+    <div id="header-container" class="w-full px-4 sm:px-8 lg:px-16 2xl:px-24 h-24 flex items-center justify-between transition-all duration-500">
+      <a href="{% url 'accounts:dashboard' %}" class="flex items-center gap-3 sm:gap-4 group">
+        <svg viewBox="0 0 100 100" class="sm:w-11 sm:h-11 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 w-[36px] h-[36px]" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-width="2">
+          <rect width="100" height="100" rx="22" fill="#78A184" class="transition-colors duration-500 group-hover:fill-[#132a24]"></rect>
+          <path d="M26 24h16v52H26z" fill="#fff"></path>
+          <path d="M48 24h26v52H58L48 52V24z" fill="#fff"></path>
+        </svg>
+        <span class="font-normal text-3xl sm:text-4xl tracking-tight text-[#132a24]">Juriscalc</span>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-8 text-base lg:text-lg text-[#546b64] font-thin overflow-x-auto hide-scrollbar">
+        {% if user.is_authenticated %}
+          <a href="{% url 'accounts:dashboard' %}" class="hover:text-[#132a24] transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-[1px] after:bg-[#132a24] hover:after:w-full after:transition-all after:duration-300 tracking-tight whitespace-nowrap">
+            Painel
+          </a>
+        {% endif %}
+      </nav>
+
+      <div class="flex items-center gap-4">
+        {% if user.is_authenticated %}
+          <span class="hidden sm:inline text-sm text-[#546b64] font-thin tracking-tight">Olá, {{ user.get_short_name|default:user.username }}</span>
+          <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="bg-transparent border border-[#132a24]/20 text-[#132a24] px-6 py-3 rounded-full text-base flex items-center hover:bg-black/5 hover:border-[#132a24]/40 hover:-translate-y-0.5 transition-all duration-300 font-light tracking-tight">
+              Sair
+            </button>
+          </form>
+        {% else %}
+          <a href="{% url 'accounts:register' %}" class="hidden sm:inline-flex bg-transparent border border-[#132a24]/20 text-[#132a24] px-6 py-3 rounded-full text-base items-center hover:bg-black/5 hover:border-[#132a24]/40 hover:-translate-y-0.5 transition-all duration-300 font-light tracking-tight">
+            Criar conta
+          </a>
+          <a href="{% url 'accounts:login' %}" class="group bg-[#132a24] text-white px-6 py-3 rounded-full text-lg flex items-center gap-2 hover:bg-[#1b3b33] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 font-light tracking-tight">
+            Entrar
+            <iconify-icon icon="solar:arrow-right-linear" class="w-5 h-5 ml-1 transition-transform duration-300 group-hover:translate-x-1"></iconify-icon>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="w-full px-4 sm:px-8 lg:px-16 2xl:px-24 pt-6">
+      <div class="flex flex-col gap-3">
+        {% for message in messages %}
+          <div class="rounded-2xl border border-black/5 bg-white px-6 py-4 text-sm sm:text-base text-[#4b615a] font-thin tracking-tight shadow-[0_8px_30px_-12px_rgba(0,0,0,0.06)]">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <main class="flex-1 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-[#0b1713] relative overflow-hidden pt-16 pb-10 sm:pt-20 sm:pb-12 border-t border-white/5 mt-20">
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+    <div class="w-full px-4 sm:px-8 lg:px-16 2xl:px-24 relative z-10">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 text-[#5c756d] text-sm sm:text-base font-thin tracking-tight">
+        <div class="flex items-center gap-3">
+          <svg viewBox="0 0 100 100" class="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100" height="100" rx="22" fill="#78A184"></rect>
+            <path d="M26 24h16v52H26z" fill="#fff"></path>
+            <path d="M48 24h26v52H58L48 52V24z" fill="#fff"></path>
+          </svg>
+          <span class="text-[#879f98]">Juriscalc — cálculos jurídicos auditáveis.</span>
+        </div>
+        <p>&copy; {% now 'Y' %} Juriscalc. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const header = document.getElementById('main-header');
+    const headerContainer = document.getElementById('header-container');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        header.classList.add('shadow-md');
+        headerContainer.classList.remove('h-24');
+        headerContainer.classList.add('h-20');
+      } else {
+        header.classList.remove('shadow-md');
+        headerContainer.classList.remove('h-20');
+        headerContainer.classList.add('h-24');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { root: null, rootMargin: '0px', threshold: 0.15 });
+      document.querySelectorAll('.reveal-up, .reveal-blur').forEach(el => observer.observe(el));
+    });
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
