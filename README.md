@@ -42,7 +42,7 @@ O **princípio inegociável** do projeto é a **separação estrita entre interp
 
 ## 3. Demonstração
 
-Fluxo principal (server-side, em pt-BR):
+Fluxo principal (server-side):
 
 ```
 Importar sentença ──► (LangGraph extrai)         Painel
@@ -143,4 +143,3 @@ python manage.py test
 
 ---
 
-> Documento de requisitos completo em [`PRD_Juriscalc.md`](./PRD_Juriscalc.md). Convenções de código: identificadores e comentários **em inglês**, interface **100% em pt-BR**, PEP 8, aspas simples (lint via Ruff) e `Decimal` para todo valor monetário.
