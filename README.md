@@ -4,7 +4,7 @@
 
 ## 1. Visão Geral
 
-Cálculos de atualização monetária e juros em processos judiciais são feitos hoje, em boa parte, em planilhas manuais. O profissional transcreve à mão valores e datas de uma sentença, escolhe índices período a período e aplica regras de legislação que mudam a cada Emenda Constitucional. Isso gera **erros de transcrição**, **divergências entre peritos** e **resultados não auditáveis** — quando alguém pergunta "de onde saiu esse número?", a resposta costuma ser uma célula perdida na planilha.
+Cálculos de atualização monetária e juros em processos judiciais são feitos hoje, em boa parte, em planilhas manuais. O profissional transcreve à mão valores e datas de uma sentença, escolhe índices período a período e aplica regras de legislação que mudam a cada Emenda Constitucional. 
 
 O **Juriscalc** ataca esse problema com três garantias:
 
